@@ -1,3 +1,4 @@
+Live Site-https://focusmirror.netlify.app/
 # FocusMirror
 
 AI-powered focus tracking, study techniques, brain training and a shared leaderboard — all in the browser.
