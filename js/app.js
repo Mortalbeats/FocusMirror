@@ -484,6 +484,7 @@
 
   window.resetSession=async function(){stopCamera();
     if(trackScore>0){
+          checkFatiguePrediction(trackScore, trackSession, Math.min(trackScore*2+trackSession*3, 200));
       state.totalSessions++;state.totalMinutes+=trackSession;if(trackScore>state.bestScore)state.bestScore=trackScore;if(trackSession>state.bestDuration)state.bestDuration=trackSession;
       if(state.pomSessions>0&&state.tbBlocks>0&&state.mindSessions>0&&state.dumpCount>0)state.methodsUsed=Math.max(state.methodsUsed,4);
       else if((state.pomSessions>0)+(state.tbBlocks>0)+(state.mindSessions>0)+(state.dumpCount>0)>state.methodsUsed)state.methodsUsed=Math.max(state.methodsUsed,(state.pomSessions>0)+(state.tbBlocks>0)+(state.mindSessions>0)+(state.dumpCount>0));
@@ -738,3 +739,81 @@
   document.getElementById('pom-sessions').textContent='Sessions: '+pomSessions;document.getElementById('pom-today').textContent='Today: '+pomToday+' min';document.getElementById('tb-blocks-today').textContent='Blocks: '+tbBlocks;document.getElementById('mind-total').textContent='Today: '+mindToday+' min';
   init();
 })();
+
+// ============================================================================
+// FocusMirror ML Burnout/Fatigue Prediction Integration
+// ============================================================================
+
+async function checkFatiguePrediction(score, durationMin, xpEarned) {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://your-cloud-ml-api.onrender.com/api/predict';
+  try {
+    const response = await fetch(ML_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score: score, duration_min: durationMin, xp_earned: xpEarned })
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    console.log('ML Burnout Prediction:', data);
+    showMLPredictionBanner(data.ui_message, data.prediction === 1);
+  } catch (err) {
+    console.log('ML prediction server offline or unreachable:', err.message);
+  }
+}
+
+function showMLPredictionBanner(messageText, isBurnoutRisk) {
+  const existing = document.getElementById('ml-prediction-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'ml-prediction-banner';
+  banner.innerText = messageText;
+  Object.assign(banner.style, {
+    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+    padding: '14px 28px', borderRadius: '10px', color: '#fff', fontWeight: 'bold',
+    fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    backgroundColor: isBurnoutRisk ? '#d9534f' : '#2e7d32', transition: 'opacity 0.5s ease', cursor: 'pointer'
+  });
+  banner.onclick = () => banner.remove();
+  document.body.appendChild(banner);
+  setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 8000);
+}
+
+// ============================================================================
+// FocusMirror ML Burnout/Fatigue Prediction Integration
+// ============================================================================
+
+async function checkFatiguePrediction(score, durationMin, xpEarned) {
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://your-cloud-ml-api.onrender.com/api/predict';
+  try {
+    const response = await fetch(ML_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score: score, duration_min: durationMin, xp_earned: xpEarned })
+    });
+    if (!response.ok) return;
+    const data = await response.json();
+    console.log('ML Burnout Prediction:', data);
+    showMLPredictionBanner(data.ui_message, data.prediction === 1);
+  } catch (err) {
+    console.log('ML prediction server offline or unreachable:', err.message);
+  }
+}
+
+function showMLPredictionBanner(messageText, isBurnoutRisk) {
+  const existing = document.getElementById('ml-prediction-banner');
+  if (existing) existing.remove();
+  const banner = document.createElement('div');
+  banner.id = 'ml-prediction-banner';
+  banner.innerText = messageText;
+  Object.assign(banner.style, {
+    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
+    padding: '14px 28px', borderRadius: '10px', color: '#fff', fontWeight: 'bold',
+    fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    backgroundColor: isBurnoutRisk ? '#d9534f' : '#2e7d32', transition: 'opacity 0.5s ease', cursor: 'pointer'
+  });
+  banner.onclick = () => banner.remove();
+  document.body.appendChild(banner);
+  setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 8000);
+}
