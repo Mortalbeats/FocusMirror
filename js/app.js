@@ -819,3 +819,6 @@ function showMLPredictionBanner(messageText, isBurnoutRisk) {
   document.body.appendChild(banner);
   setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 8000);
 }
+
+window.checkFatiguePrediction = checkFatiguePrediction;
+window.showMLPredictionBanner = showMLPredictionBanner;
