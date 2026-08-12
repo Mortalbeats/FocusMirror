@@ -746,7 +746,7 @@
 
 async function checkFatiguePrediction(score, durationMin, xpEarned) {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://your-cloud-ml-api.onrender.com/api/predict';
+  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://focusmirror-ml.onrender.com/api/predict';
   try {
     const response = await fetch(ML_API_URL, {
       method: 'POST',
@@ -785,7 +785,7 @@ function showMLPredictionBanner(messageText, isBurnoutRisk) {
 
 async function checkFatiguePrediction(score, durationMin, xpEarned) {
   const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://your-cloud-ml-api.onrender.com/api/predict';
+  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://focusmirror-ml.onrender.com/api/predict';
   try {
     const response = await fetch(ML_API_URL, {
       method: 'POST',
