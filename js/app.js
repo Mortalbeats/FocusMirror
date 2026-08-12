@@ -539,8 +539,6 @@
 
   // ─── HISTORY & STATS ───
   window.updateHistoryDisplay=function(){
-  try { const _h = JSON.parse(localStorage.getItem("ff_history")||"[]"); if(_h.length>0 && typeof checkFatiguePrediction === "function") { const _latest = _h[0]; checkFatiguePrediction(_latest.score||_latest.highest||80, _latest.duration||25, _latest.xp||40); } } catch(e){}
-
     const list=document.getElementById('history-list'),hist=JSON.parse(localStorage.getItem('ff_history')||'[]');
     if(!hist.length){list.innerHTML='<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px">No sessions yet.</div>';return}
     list.innerHTML=hist.slice(0,30).map(e=>`<div class="history-item"><div class="h-left"><div class="h-icon">${e.method==='Pomodoro'?'🍅':e.method.startsWith('Time Block')?'📋':e.method==='Mindfulness'?'🧘':e.method.includes('Brain Gym')?'🧠':'📊'}</div><div><div class="h-method">${e.method}</div><div class="h-time">${e.date||''} • ${e.duration||0} min</div></div><div class="h-xp">+${e.xp||0} XP</div></div><div class="h-score" style="color:${scoreColor(e.highest||e.score||0)}">${e.highest||e.score||'--'}</div></div>`).join('')
@@ -743,7 +741,7 @@
 })();
 
 // ============================================================================
-// FocusMirror ML Burnout/Fatigue Prediction Integration
+// FocusMirror ML Burnout/Fatigue Prediction Integration (Production Safe)
 // ============================================================================
 
 async function checkFatiguePrediction(score, durationMin, xpEarned) {
@@ -760,46 +758,7 @@ async function checkFatiguePrediction(score, durationMin, xpEarned) {
     console.log('ML Burnout Prediction:', data);
     showMLPredictionBanner(data.ui_message, data.prediction === 1);
   } catch (err) {
-    console.log('ML prediction server offline or unreachable:', err.message);
-  }
-}
-
-function showMLPredictionBanner(messageText, isBurnoutRisk) {
-  const existing = document.getElementById('ml-prediction-banner');
-  if (existing) existing.remove();
-  const banner = document.createElement('div');
-  banner.id = 'ml-prediction-banner';
-  banner.innerText = messageText;
-  Object.assign(banner.style, {
-    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-    padding: '14px 28px', borderRadius: '10px', color: '#fff', fontWeight: 'bold',
-    fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-    backgroundColor: isBurnoutRisk ? '#d9534f' : '#2e7d32', transition: 'opacity 0.5s ease', cursor: 'pointer'
-  });
-  banner.onclick = () => banner.remove();
-  document.body.appendChild(banner);
-  setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 8000);
-}
-
-// ============================================================================
-// FocusMirror ML Burnout/Fatigue Prediction Integration
-// ============================================================================
-
-async function checkFatiguePrediction(score, durationMin, xpEarned) {
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://focusmirror-ml.onrender.com/api/predict';
-  try {
-    const response = await fetch(ML_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: score, duration_min: durationMin, xp_earned: xpEarned })
-    });
-    if (!response.ok) return;
-    const data = await response.json();
-    console.log('ML Burnout Prediction:', data);
-    showMLPredictionBanner(data.ui_message, data.prediction === 1);
-  } catch (err) {
-    console.log('ML prediction server offline or unreachable:', err.message);
+    console.log('ML prediction server unreachable:', err.message);
   }
 }
 
@@ -822,3 +781,16 @@ function showMLPredictionBanner(messageText, isBurnoutRisk) {
 
 window.checkFatiguePrediction = checkFatiguePrediction;
 window.showMLPredictionBanner = showMLPredictionBanner;
+
+// Safely wrap updateHistoryDisplay so every completed session triggers ML prediction
+const _ffOldUpdateHistory = window.updateHistoryDisplay;
+window.updateHistoryDisplay = function() {
+  if (typeof _ffOldUpdateHistory === 'function') _ffOldUpdateHistory();
+  try {
+    const _h = JSON.parse(localStorage.getItem('ff_history') || '[]');
+    if (_h.length > 0) {
+      const _latest = _h[0];
+      checkFatiguePrediction(_latest.score || _latest.highest || 80, _latest.duration || 25, _latest.xp || 40);
+    }
+  } catch(e) {}
+};
