@@ -539,6 +539,8 @@
 
   // ─── HISTORY & STATS ───
   window.updateHistoryDisplay=function(){
+  try { const _h = JSON.parse(localStorage.getItem("ff_history")||"[]"); if(_h.length>0 && typeof checkFatiguePrediction === "function") { const _latest = _h[0]; checkFatiguePrediction(_latest.score||_latest.highest||80, _latest.duration||25, _latest.xp||40); } } catch(e){}
+
     const list=document.getElementById('history-list'),hist=JSON.parse(localStorage.getItem('ff_history')||'[]');
     if(!hist.length){list.innerHTML='<div style="color:var(--text-dim);font-size:12px;text-align:center;padding:20px">No sessions yet.</div>';return}
     list.innerHTML=hist.slice(0,30).map(e=>`<div class="history-item"><div class="h-left"><div class="h-icon">${e.method==='Pomodoro'?'🍅':e.method.startsWith('Time Block')?'📋':e.method==='Mindfulness'?'🧘':e.method.includes('Brain Gym')?'🧠':'📊'}</div><div><div class="h-method">${e.method}</div><div class="h-time">${e.date||''} • ${e.duration||0} min</div></div><div class="h-xp">+${e.xp||0} XP</div></div><div class="h-score" style="color:${scoreColor(e.highest||e.score||0)}">${e.highest||e.score||'--'}</div></div>`).join('')
