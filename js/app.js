@@ -494,7 +494,6 @@
     }
     tracking=false;trackScore=0;trackPosture=0;trackSession=0;highestScore=0;trackStartTime=null;heatmapData=[];startBtn.disabled=false;startBtn.textContent='▶ Start Tracking';document.getElementById('dash-score').textContent='--';document.getElementById('dash-posture').textContent='--';document.getElementById('dash-blink').textContent='--';document.getElementById('dash-session').textContent='--';['b-score','b-posture','b-blink'].forEach(id=>document.getElementById(id).textContent='0');['bf-score','bf-posture','bf-blink'].forEach(id=>document.getElementById(id).style.width='0%');document.getElementById('state-label').textContent='READY';document.getElementById('rec-text').textContent='Session saved!';scoreHistory.length=0;timeLabels.length=0;chart.update();
   };
-}
   // ─── POMODORO ───
   let pomRunning=false,pomMode='focus',pomLeft=25*60,pomTotal=25*60,pomInterval=null;
   let pomSessions=parseInt(localStorage.getItem('ff_pom_sessions')||'0'),pomToday=parseInt(localStorage.getItem('ff_pom_today')||'0');
