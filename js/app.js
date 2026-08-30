@@ -490,11 +490,11 @@
       addXp(Math.min(trackScore*2+trackSession*3,200));addStreak();
       const h=JSON.parse(localStorage.getItem('ff_history')||'[]');h.unshift({id:Date.now(),date:new Date().toLocaleDateString(),time:new Date().toLocaleTimeString(),method:'Dashboard Tracking',score:trackScore,duration:trackSession,highest:highestScore,xp:Math.min(trackScore*2+trackSession*3,200)});if(h.length>100)h.pop();localStorage.setItem('ff_history',JSON.stringify(h));
       saveToLeaderboard();saveState(state);updateXpDisplay();renderBadges();renderCheckpoints();updateLeaderboards();updateHistoryDisplay();updateDashboardStats();updateTechStats();
-      await checkFatiguePrediction(trackScore, trackSession, Math.min(trackScore*2+trackSession*3, 200));
+      checkFatiguePrediction(trackScore, trackSession, Math.min(trackScore*2+trackSession*3, 200));
     }
     tracking=false;trackScore=0;trackPosture=0;trackSession=0;highestScore=0;trackStartTime=null;heatmapData=[];startBtn.disabled=false;startBtn.textContent='▶ Start Tracking';document.getElementById('dash-score').textContent='--';document.getElementById('dash-posture').textContent='--';document.getElementById('dash-blink').textContent='--';document.getElementById('dash-session').textContent='--';['b-score','b-posture','b-blink'].forEach(id=>document.getElementById(id).textContent='0');['bf-score','bf-posture','bf-blink'].forEach(id=>document.getElementById(id).style.width='0%');document.getElementById('state-label').textContent='READY';document.getElementById('rec-text').textContent='Session saved!';scoreHistory.length=0;timeLabels.length=0;chart.update();
   };
-
+}
   // ─── POMODORO ───
   let pomRunning=false,pomMode='focus',pomLeft=25*60,pomTotal=25*60,pomInterval=null;
   let pomSessions=parseInt(localStorage.getItem('ff_pom_sessions')||'0'),pomToday=parseInt(localStorage.getItem('ff_pom_today')||'0');
