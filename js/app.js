@@ -484,7 +484,6 @@
 
   window.resetSession=async function(){stopCamera();
     if(trackScore>0){
-          
       state.totalSessions++;state.totalMinutes+=trackSession;if(trackScore>state.bestScore)state.bestScore=trackScore;if(trackSession>state.bestDuration)state.bestDuration=trackSession;
       if(state.pomSessions>0&&state.tbBlocks>0&&state.mindSessions>0&&state.dumpCount>0)state.methodsUsed=Math.max(state.methodsUsed,4);
       else if((state.pomSessions>0)+(state.tbBlocks>0)+(state.mindSessions>0)+(state.dumpCount>0)>state.methodsUsed)state.methodsUsed=Math.max(state.methodsUsed,(state.pomSessions>0)+(state.tbBlocks>0)+(state.mindSessions>0)+(state.dumpCount>0));
