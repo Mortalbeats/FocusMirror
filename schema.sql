@@ -34,15 +34,18 @@ create table if not exists public.user_stats (
 
 -- Individual session history. PRIVATE — only the owner can read their own.
 create table if not exists public.sessions (
-  id           bigserial primary key,
-  user_id      uuid not null references auth.users(id) on delete cascade,
-  method       text not null,                                    -- 'Pomodoro', 'Dashboard Tracking', …
-  score        integer check (score between 0 and 100),
-  duration_min integer not null default 0 check (duration_min between 0 and 600),
-  xp_earned    integer not null default 0 check (xp_earned between 0 and 500),
-  created_at   timestamptz not null default now()
+  id             bigserial primary key,
+  user_id        uuid not null references auth.users(id) on delete cascade,
+  method         text not null,
+  score          integer check (score between 0 and 100),
+  duration_min   integer not null default 0 check (duration_min between 0 and 600),
+  xp_earned      integer not null default 0 check (xp_earned between 0 and 500),
+  fatigue_rating integer check (fatigue_rating between 1 and 5),
+  created_at     timestamptz not null default now()
 );
-
+alter table public.sessions
+  add column if not exists fatigue_rating integer
+  check (fatigue_rating between 1 and 5);
 create index if not exists sessions_user_idx
   on public.sessions (user_id, created_at desc);
 create index if not exists stats_xp_idx
