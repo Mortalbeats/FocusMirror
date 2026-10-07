@@ -737,58 +737,186 @@
   document.getElementById('pom-sessions').textContent='Sessions: '+pomSessions;document.getElementById('pom-today').textContent='Today: '+pomToday+' min';document.getElementById('tb-blocks-today').textContent='Blocks: '+tbBlocks;document.getElementById('mind-total').textContent='Today: '+mindToday+' min';
   init();
 })();
+// ============================================================================
+// FocusMirror ML Fatigue Prediction Integration
+// ============================================================================
 
-// ============================================================================
-// FocusMirror ML Burnout/Fatigue Prediction Integration (Production Safe)
-// ============================================================================
+let mlRequestId = 0;
+let mlLastSessionId = null;
 
 async function checkFatiguePrediction(score, durationMin, xpEarned) {
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  const ML_API_URL = isLocal ? 'http://localhost:5001/api/predict' : 'https://focusmirror-ml.onrender.com/api/predict';
+  const requestId = ++mlRequestId;
+
+  const isLocal =
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1';
+
+  const ML_API_URL = isLocal
+    ? 'http://localhost:5001/api/predict'
+    : 'https://focusmirror-ml.onrender.com/api/predict';
+
+  const controller = new AbortController();
+
+  const timeoutId = setTimeout(function () {
+    controller.abort();
+  }, 65000);
+
+  showMLPredictionBanner(
+    'Analyzing your session fatigue...',
+    false,
+    'loading'
+  );
+
   try {
     const response = await fetch(ML_API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ score: score, duration_min: durationMin, xp_earned: xpEarned })
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      signal: controller.signal,
+      body: JSON.stringify({
+        score: Number(score) || 0,
+        duration_min: Number(durationMin) || 0,
+        xp_earned: Number(xpEarned) || 0
+      })
     });
-    if (!response.ok) return;
+
+    if (!response.ok) {
+      throw new Error('ML API returned HTTP ' + response.status);
+    }
+
     const data = await response.json();
+
+    if (requestId !== mlRequestId) {
+      return;
+    }
+
     console.log('ML Burnout Prediction:', data);
-    showMLPredictionBanner(data.ui_message, data.prediction === 1);
-  } catch (err) {
-    console.log('ML prediction server unreachable:', err.message);
+
+    showMLPredictionBanner(
+      data.ui_message,
+      data.prediction === 1,
+      'result'
+    );
+  } catch (error) {
+    if (requestId !== mlRequestId) {
+      return;
+    }
+
+    console.error('ML prediction failed:', error);
+
+    showMLPredictionBanner(
+      'Fatigue estimate temporarily unavailable. Please try again.',
+      false,
+      'error'
+    );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
-function showMLPredictionBanner(messageText, isBurnoutRisk) {
-  const existing = document.getElementById('ml-prediction-banner');
-  if (existing) existing.remove();
+function showMLPredictionBanner(
+  messageText,
+  isBurnoutRisk,
+  bannerType
+) {
+  const existing = document.getElementById(
+    'ml-prediction-banner'
+  );
+
+  if (existing) {
+    existing.remove();
+  }
+
   const banner = document.createElement('div');
+
   banner.id = 'ml-prediction-banner';
   banner.innerText = messageText;
+
+  let backgroundColor = '#2e7d32';
+
+  if (bannerType === 'loading') {
+    backgroundColor = '#6C5CE7';
+  } else if (bannerType === 'error') {
+    backgroundColor = '#636e72';
+  } else if (isBurnoutRisk) {
+    backgroundColor = '#d9534f';
+  }
+
   Object.assign(banner.style, {
-    position: 'fixed', top: '20px', left: '50%', transform: 'translateX(-50%)',
-    padding: '14px 28px', borderRadius: '10px', color: '#fff', fontWeight: 'bold',
-    fontSize: '15px', zIndex: '99999', boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
-    backgroundColor: isBurnoutRisk ? '#d9534f' : '#2e7d32', transition: 'opacity 0.5s ease', cursor: 'pointer'
+    position: 'fixed',
+    top: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    padding: '14px 28px',
+    borderRadius: '10px',
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: '15px',
+    zIndex: '99999',
+    boxShadow: '0 4px 16px rgba(0,0,0,0.25)',
+    backgroundColor: backgroundColor,
+    transition: 'opacity 0.5s ease',
+    cursor: 'pointer'
   });
-  banner.onclick = () => banner.remove();
+
+  banner.onclick = function () {
+    banner.remove();
+  };
+
   document.body.appendChild(banner);
-  setTimeout(() => { banner.style.opacity = '0'; setTimeout(() => banner.remove(), 500); }, 8000);
+
+  // Keep the loading banner visible until the API responds.
+  if (bannerType !== 'loading') {
+    setTimeout(function () {
+      banner.style.opacity = '0';
+
+      setTimeout(function () {
+        banner.remove();
+      }, 500);
+    }, 8000);
+  }
 }
 
 window.checkFatiguePrediction = checkFatiguePrediction;
 window.showMLPredictionBanner = showMLPredictionBanner;
 
-// Safely wrap updateHistoryDisplay so every completed session triggers ML prediction
+// Trigger one prediction for each newly saved session.
 const _ffOldUpdateHistory = window.updateHistoryDisplay;
-window.updateHistoryDisplay = function() {
-  if (typeof _ffOldUpdateHistory === 'function') _ffOldUpdateHistory();
+
+window.updateHistoryDisplay = function () {
+  if (typeof _ffOldUpdateHistory === 'function') {
+    _ffOldUpdateHistory();
+  }
+
   try {
-    const _h = JSON.parse(localStorage.getItem('ff_history') || '[]');
-    if (_h.length > 0) {
-      const _latest = _h[0];
-      checkFatiguePrediction(_latest.score || _latest.highest || 80, _latest.duration || 25, _latest.xp || 40);
+    const history = JSON.parse(
+      localStorage.getItem('ff_history') || '[]'
+    );
+
+    if (!history.length) {
+      return;
     }
-  } catch(e) {}
+
+    const latest = history[0];
+    const sessionId = latest.id || (
+      String(latest.date || '') + '|' +
+      String(latest.time || '') + '|' +
+      String(latest.method || '')
+    );
+
+    if (String(sessionId) === String(mlLastSessionId)) {
+      return;
+    }
+
+    mlLastSessionId = sessionId;
+
+    checkFatiguePrediction(
+      latest.score || latest.highest || 80,
+      latest.duration || 25,
+      latest.xp || 40
+    );
+  } catch (error) {
+    console.error('Could not start ML session prediction:', error);
+  }
 };
