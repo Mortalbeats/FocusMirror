@@ -877,7 +877,95 @@ function showMLPredictionBanner(
     }, 8000);
   }
 }
+function showMLTelemetry(
+  score,
+  durationMin,
+  xpEarned,
+  data
+) {
+  const oldPanel = document.getElementById(
+    'ml-telemetry-panel'
+  );
 
+  if (oldPanel) {
+    oldPanel.remove();
+  }
+
+  const panel = document.createElement('div');
+
+  panel.id = 'ml-telemetry-panel';
+
+  Object.assign(panel.style, {
+    position: 'fixed',
+    right: '20px',
+    bottom: '20px',
+    width: '270px',
+    padding: '16px',
+    borderRadius: '14px',
+    background: 'rgba(20, 20, 35, 0.96)',
+    color: '#ffffff',
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '13px',
+    lineHeight: '1.6',
+    zIndex: '99998',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.35)',
+    border: '1px solid rgba(108,92,231,0.7)'
+  });
+
+  const title = document.createElement('div');
+  title.textContent = '🧠 FocusMirror ML Telemetry';
+  title.style.fontWeight = 'bold';
+  title.style.fontSize = '15px';
+  title.style.marginBottom = '8px';
+
+  const model = document.createElement('div');
+  model.textContent =
+    'Model: ' + (data.model || 'Render ML API');
+
+  const inputs = document.createElement('div');
+  inputs.textContent =
+    'Inputs: score ' + score +
+    ' | duration ' + durationMin + ' min' +
+    ' | XP ' + xpEarned;
+
+  const probability = document.createElement('div');
+  probability.textContent =
+    'Probability: ' +
+    (Number(data.probability || 0) * 100).toFixed(1) +
+    '%';
+
+  const prediction = document.createElement('div');
+  prediction.textContent =
+    'Prediction: ' +
+    (data.prediction === 1
+      ? 'Elevated fatigue risk'
+      : 'Healthy focus');
+
+  const note = document.createElement('div');
+  note.textContent =
+    'Experimental estimate; not a medical diagnosis.';
+  note.style.fontSize = '10px';
+  note.style.opacity = '0.7';
+  note.style.marginTop = '8px';
+
+  panel.appendChild(title);
+  panel.appendChild(model);
+  panel.appendChild(inputs);
+  panel.appendChild(probability);
+  panel.appendChild(prediction);
+  panel.appendChild(note);
+
+  document.body.appendChild(panel);
+
+  setTimeout(function () {
+    panel.style.opacity = '0';
+    panel.style.transition = 'opacity 0.5s ease';
+
+    setTimeout(function () {
+      panel.remove();
+    }, 500);
+  }, 15000);
+}
 window.checkFatiguePrediction = checkFatiguePrediction;
 window.showMLPredictionBanner = showMLPredictionBanner;
 
