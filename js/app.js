@@ -798,6 +798,12 @@ async function checkFatiguePrediction(score, durationMin, xpEarned) {
       data.prediction === 1,
       'result'
     );
+showMLTelemetry(
+  score,
+  durationMin,
+  xpEarned,
+  data
+);
   } catch (error) {
     if (requestId !== mlRequestId) {
       return;
