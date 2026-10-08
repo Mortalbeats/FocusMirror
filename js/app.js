@@ -946,8 +946,18 @@ function showMLTelemetry(
     'Prediction: ' +
     (data.prediction === 1
       ? 'Elevated fatigue risk'
-      : 'Healthy focus');
-
+      : 'Healthy focus');  
+  const risk = document.createElement('div');
+  risk.textContent =
+    'Risk level: ' +
+    (data.risk_level ||
+      (Number(data.probability || 0) < 0.34
+        ? 'Low'
+        : Number(data.probability || 0) < 0.67
+          ? 'Moderate'
+          : 'Elevated'));
+  risk.style.fontWeight = 'bold';
+  risk.style.marginTop = '4px';
   const note = document.createElement('div');
   note.textContent =
     'Experimental estimate; not a medical diagnosis.';
@@ -959,6 +969,7 @@ function showMLTelemetry(
   panel.appendChild(model);
   panel.appendChild(inputs);
   panel.appendChild(probability);
+  panel.appendChild(risk);
   panel.appendChild(prediction);
   panel.appendChild(note);
 
