@@ -107,6 +107,26 @@ window.DeskSensor = (() => {
         emit();
       }
       render();
+        } else if (line.startsWith('Distance:')) {
+      // also accepts desk_presence_simple.ino:
+      //   "Distance: 42 cm  ->  PERSON AT DESK"  |  "desk empty"
+      const m = line.match(/Distance:\s*(-?\d+)/);
+      if (m) {
+        const d = parseInt(m[1], 10);
+        if (!isNaN(d) && d > 0) state.distance = d;
+      }
+      let present = null;
+      if (/PERSON AT DESK/i.test(line)) present = true;
+      else if (/desk empty/i.test(line)) present = false;
+      else if (m) {
+        const d2 = parseInt(m[1], 10);
+        present = (d2 > 0 && d2 <= 70);
+      }
+      if (present !== null && present !== state.present) {
+        state.present = present;
+        emit();
+      }
+      render();
     }
   }
 
