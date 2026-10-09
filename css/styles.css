@@ -886,3 +886,22 @@ body.light .tabs-hint{color:rgba(0,0,0,0.42);background:rgba(240,240,245,0.82);b
    width on very narrow phones. body already clips; html must clip too or the
    overflow simply escapes to the root scroller. */
 html{overflow-x:hidden}
+.ds-card{background:var(--glass-bg);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--glass-border);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}
+.ds-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.ds-title{font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-family:var(--font-grotesk)}
+.ds-sub{font-size:11px;color:var(--text-muted);margin-top:3px}
+.ds-switch{width:42px;height:23px;border-radius:12px;background:rgba(255,255,255,0.06);border:1px solid var(--glass-border);position:relative;cursor:pointer;flex-shrink:0;padding:0;transition:background .2s,border-color .2s}
+.ds-switch[aria-checked="true"]{background:var(--primary);border-color:var(--primary)}
+.ds-knob{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:left .2s}
+.ds-switch[aria-checked="true"] .ds-knob{left:21px}
+.ds-switch:disabled{opacity:.45;cursor:not-allowed}
+.ds-body{margin-top:14px;border-top:1px solid var(--glass-border);padding-top:14px}
+.ds-body[hidden]{display:none}
+.ds-status-row{display:flex;align-items:center;gap:12px}
+.ds-dot{width:11px;height:11px;border-radius:50%;background:var(--text-dim);flex-shrink:0;transition:background .2s,box-shadow .2s}
+.ds-dot.on{background:var(--secondary);box-shadow:0 0 10px rgba(0,206,201,.5)}
+.ds-dot.off{background:var(--danger);box-shadow:0 0 10px rgba(226,75,74,.5)}
+.ds-state{font-size:15px;font-weight:600}
+.ds-meta{font-size:11px;color:var(--text-muted);margin-top:2px}
+body.light .ds-card{background:rgba(255,255,255,0.6);border-color:rgba(0,0,0,0.06)}
+body.light .ds-switch{background:rgba(0,0,0,0.08);border-color:rgba(0,0,0,0.1)}
