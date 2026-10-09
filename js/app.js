@@ -565,7 +565,15 @@
       window._nt=setTimeout(()=>el.classList.remove('show'),4000);
     };
   }
-
+  // Bridge for the Desk Sensor feature (js/desksensor.js): lets it check
+  // whether the Pomodoro / Time Block timers are running, so it can
+  // auto-pause them when the user leaves the desk and resume on return.
+  window.fmTimerState=function(){
+    return{
+      isPomRunning:function(){return pomRunning},
+      isTbRunning:function(){return tbRunning}
+    };
+  };
   // ─── INIT ───
   
   // Camera manager - only start camera on demand
