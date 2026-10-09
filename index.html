@@ -285,7 +285,27 @@
           <div class="bar-row"><span class="bar-name">Blink Health</span><span class="bar-num" id="b-blink">0</span></div>
           <div class="bar-track"><div class="bar-fill" id="bf-blink" style="width:0%;background:var(--gold)"></div></div>
         </div>
-        <div class="alert-box" id="alert-box"><div class="alert-state" id="state-label">READY</div><div class="alert-msg" id="rec-text">Enter your name and press Start</div></div>
+       <div class="alert-box" id="alert-box"><div class="alert-state" id="state-label">READY</div><div class="alert-msg" id="rec-text">Enter your name and press Start</div></div>
+              <!-- Desk Sensor feature: Arduino ultrasonic presence (toggleable) -->
+        <div class="ds-card" id="desk-sensor">
+          <div class="ds-head">
+            <div>
+              <div class="ds-title">Desk Sensor</div>
+              <div class="ds-sub" id="ds-desc">Arduino ultrasonic presence</div>
+            </div>
+            <button class="ds-switch" id="ds-switch" role="switch" aria-checked="false" aria-label="Toggle desk sensor"><span class="ds-knob"></span></button>
+          </div>
+          <div class="ds-body" id="ds-body" hidden>
+            <div class="ds-status-row">
+              <span class="ds-dot" id="ds-dot"></span>
+              <div>
+                <div class="ds-state" id="ds-state">Offline</div>
+                <div class="ds-meta" id="ds-meta">Arduino not connected</div>
+              </div>
+            </div>
+            <button class="btn btn-primary btn-block" id="ds-btn" style="margin-top:12px">Connect Arduino</button>
+          </div>
+        </div>
       </div>
     </div>
     <div class="chart-box anim-up-d4">
@@ -687,6 +707,7 @@
 <!-- ── app modules ── -->
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
+<script src="js/desksensor.js"> 
 <script src="js/braingym.js"></script>
 <script src="js/games.js"></script>
 <script src="js/landing.js"></script>
