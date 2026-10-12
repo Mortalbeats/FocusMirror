@@ -665,7 +665,10 @@
     resetBlinkState();
     if(typeof showNotif==='function') showNotif('👁 Recalibrating','Keep your eyes open normally for a few seconds');
   };
-  undefined
+  window.recalibratePosture=function(){
+    postureCalibrated=false;calibrationFrames=0;faceHeightSamples=[];baselineFaceHeight=null;
+    if(typeof showNotif==='function') showNotif('🪑 Recalibrating posture','Sit up STRAIGHT and face the camera for ~2 seconds');
+     };
   function startBlinkLoop(){
     if(blinkLoopRunning) return;
     blinkLoopRunning=true;
