@@ -375,11 +375,11 @@
           // Posture calibration
           if(!postureCalibrated){
             if(faceH>30){faceHeightSamples.push(faceH);calibrationFrames++;
-              statusEl.textContent='Calibrating posture... '+calibrationFrames+'/20';
+              statusEl.textContent='Sit up STRAIGHT - calibrating '+calibrationFrames+'/20';
               statusEl.className='cam-status warn';
               if(calibrationFrames>=20){
-                var s=0;for(var z=0;z<faceHeightSamples.length;z++)s+=faceHeightSamples[z];
-                baselineFaceHeight=s/faceHeightSamples.length;postureCalibrated=true;
+                var arr=faceHeightSamples.slice().sort(function(a,b){return a-b});baselineFaceHeight=arr[Math.floor(arr.length/2)];
+                postureCalibrated=true;
               }
             }
           }
@@ -665,7 +665,7 @@
     resetBlinkState();
     if(typeof showNotif==='function') showNotif('👁 Recalibrating','Keep your eyes open normally for a few seconds');
   };
-
+  undefined
   function startBlinkLoop(){
     if(blinkLoopRunning) return;
     blinkLoopRunning=true;
