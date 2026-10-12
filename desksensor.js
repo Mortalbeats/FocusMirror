@@ -219,7 +219,7 @@ window.DeskSensor = (() => {
       const el = document.getElementById('b-score');
       if (!el) return;
       const v = parseInt(el.textContent, 10);
-      if (!isNaN(v) && v >= 0 && v <= 100) {
+      if (!isNaN(v) && v > 0 && v <= 100) {
         try { writer.write('S' + v + '\n'); } catch (e) {}
       }
     }, 1000);
