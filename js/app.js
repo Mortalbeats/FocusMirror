@@ -94,7 +94,7 @@
   const chart=new Chart(document.getElementById('focusChart').getContext('2d'),{type:'line',data:{labels:timeLabels,datasets:[{data:scoreHistory,borderColor:'#6C5CE7',backgroundColor:'rgba(108,92,231,0.06)',fill:true,tension:0.4,pointRadius:0,borderWidth:1.5}]},options:{responsive:true,animation:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{grid:{display:false},ticks:{color:'rgba(255,255,255,0.15)',font:{size:8}}},y:{min:0,max:100,grid:{color:'rgba(255,255,255,0.03)'},ticks:{color:'rgba(255,255,255,0.15)',font:{size:8},stepSize:25}}}}});
   function scoreColor(s){return s>=70?'#00CEC9':s>=45?'#FDCB6E':'#E24B4A'}
 
-  let model=null,tracking=false,lastSend=0,blinkTimes=[],totalBlinks=0,earPrev=0.5;
+  let model=null,tracking=false,lastSend=0,blinkTimes=[],totalBlinks=0,earPrev=0.5,fsSmooth=null,postureSmooth=null;
   let baselineFaceHeight=null,postureCalibrated=false,calibrationFrames=0,faceHeightSamples=[];
 
   /* ─── BLINK DETECTION (FaceMesh Eye-Aspect-Ratio) ───────────────────────
@@ -395,7 +395,7 @@
               var eyeTilt=Math.abs(lms[1][1]-lms[0][1])/faceW;
               if(eyeTilt>0.12)postureScore-=20;if(eyeTilt>0.20)postureScore-=30;
             }
-            postureScore=Math.max(0,Math.min(100,postureScore));
+            postureScore=Math.max(0,Math.min(100,postureScore));postureSmooth=postureSmooth===null?postureScore:Math.round(postureSmooth*0.75+postureScore*0.25);postureScore=postureSmooth;
           }
           /* Blink detection runs in its OWN loop (blinkLoop) rather than here.
              It used to be nested inside this blazeface branch, which meant two
@@ -406,7 +406,7 @@
           var earNow=lastEar;
           bpm=blinkTimes.length;
           var blinkHealth=Math.max(0,100-Math.abs(bpm-15)*6);
-          var fs=Math.round(postureScore*0.55+blinkHealth*0.35+10);
+          var fsRaw=Math.round(postureScore*0.55+blinkHealth*0.35+10);fsSmooth=fsSmooth===null?fsRaw:Math.round(fsSmooth*0.75+fsRaw*0.25);var fs=fsSmooth;
           trackScore=fs;trackPosture=postureScore;
           if(fs>highestScore)highestScore=fs;
           var elapsed=trackStartTime?Math.round((Date.now()-trackStartTime)/60000):0;
@@ -469,7 +469,7 @@
   if(!ok){alert('Could not access camera');return}
   tracking=true;
   trackStartTime=Date.now();
-  postureCalibrated=false;calibrationFrames=0;faceHeightSamples=[];baselineFaceHeight=null;
+  postureCalibrated=false;calibrationFrames=0;faceHeightSamples=[];baselineFaceHeight=null;fsSmooth=null;postureSmooth=null;
   blinkTimes=[];totalBlinks=0;
   resetBlinkState();
   lastEar=null;meshPts=null;meshFps=0;_meshFrames=0;_meshWindowStart=0;
@@ -666,7 +666,7 @@
     if(typeof showNotif==='function') showNotif('👁 Recalibrating','Keep your eyes open normally for a few seconds');
   };
   window.recalibratePosture=function(){
-    postureCalibrated=false;calibrationFrames=0;faceHeightSamples=[];baselineFaceHeight=null;
+    postureCalibrated=false;calibrationFrames=0;faceHeightSamples=[];baselineFaceHeight=null;fsSmooth=null;postureSmooth=null;
     if(typeof showNotif==='function') showNotif('🪑 Recalibrating posture','Sit up STRAIGHT and face the camera for ~2 seconds');
      };
   function startBlinkLoop(){
