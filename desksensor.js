@@ -38,9 +38,9 @@ window.DeskSensor = (() => {
     btn:    document.getElementById('ds-btn'),
   };
 
-  let port = null, reader = null;
+  let port = null, reader = null, writer = null, scoreTimer = null;
   let connected = false, remote = false, enabled = false;
-  const state = { present: null, distance: null };
+  const state = { present: null, distance: null, noise: null };
 
   function supported() { return 'serial' in navigator; }
 
@@ -71,10 +71,12 @@ window.DeskSensor = (() => {
       els.btn.style.display = '';
     } else {
       els.state.textContent = p ? 'At your desk' : 'Desk empty';
-      els.meta.textContent = state.distance != null ? state.distance + ' cm from sensor' : '—';
+      const nl = noiseLabel();
+      els.meta.textContent = (state.distance != null ? state.distance + ' cm from sensor' : '—') + (nl ? ' · ' + nl : '');
       els.btn.style.display = '';
     }
     els.btn.textContent = connected && !remote ? 'Disconnect' : 'Connect Arduino';
+    updateNoiseUI();
   }
 
   async function setEnabled(on) {
@@ -127,6 +129,10 @@ window.DeskSensor = (() => {
         emit();
       }
       render();
+    } else if (line.startsWith('NOISE:')) {
+      const n = parseInt(line.slice(6), 10);
+      if (!isNaN(n)) state.noise = Math.max(0, Math.min(100, n));
+      render();
     }
   }
 
@@ -152,6 +158,78 @@ window.DeskSensor = (() => {
     if (connected) disconnect();
   }
 
+  /* ---- Room Noise UI (injected with JS, so index.html needs no edits) ---- */
+  let noiseRow = null, noiseFill = null, noiseTxt = null;
+  function ensureNoiseUI() {
+    const body = document.getElementById('ds-body');
+    if (!body || document.getElementById('ds-noise-row')) return;
+    noiseRow = document.createElement('div');
+    noiseRow.id = 'ds-noise-row';
+    noiseRow.style.cssText = 'margin-top:12px';
+    const label = document.createElement('div');
+    label.textContent = 'ROOM NOISE';
+    label.style.cssText = 'font-size:9px;color:var(--text-dim);text-transform:uppercase;letter-spacing:2px;font-weight:700;font-family:var(--font-grotesk);margin-bottom:6px';
+    const track = document.createElement('div');
+    track.style.cssText = 'height:6px;border-radius:3px;background:rgba(255,255,255,.08);overflow:hidden';
+    noiseFill = document.createElement('div');
+    noiseFill.style.cssText = 'height:100%;width:0%;background:var(--secondary);transition:width .3s,background .3s';
+    track.appendChild(noiseFill);
+    noiseTxt = document.createElement('div');
+    noiseTxt.style.cssText = 'font-size:11px;color:var(--text-muted);margin-top:4px';
+    noiseTxt.textContent = '\u2014';
+    noiseRow.appendChild(label); noiseRow.appendChild(track); noiseRow.appendChild(noiseTxt);
+    const btn = document.getElementById('ds-btn');
+    if (btn && btn.parentNode === body) body.insertBefore(noiseRow, btn);
+    else body.appendChild(noiseRow);
+  }
+  function updateNoiseUI() {
+    if (!connected) {
+      if (noiseRow && noiseRow.parentNode) noiseRow.parentNode.removeChild(noiseRow);
+      noiseRow = null; noiseFill = null; noiseTxt = null;
+      return;
+    }
+    ensureNoiseUI();
+    if (!noiseFill || !noiseTxt) return;
+    const n = state.noise;
+    if (n == null) {
+      noiseTxt.textContent = 'waiting for mic data\u2026';
+      noiseFill.style.width = '0%';
+      return;
+    }
+    noiseTxt.textContent = noiseLabel();
+    noiseFill.style.width = Math.max(2, Math.min(100, n)) + '%';
+    noiseFill.style.background = n < 25 ? 'var(--secondary)' : n < 60 ? 'var(--gold)' : 'var(--danger)';
+  }
+
+  function noiseLabel() {
+    const n = state.noise;
+    if (n == null) return '';
+    if (n < 25) return '\u{1F3A3} Quiet (' + n + ')';
+    if (n < 60) return '\u{1F3A3} Noise ' + n;
+    return '\u{1F3A3} LOUD room (' + n + ')';
+  }
+
+  /* Sends the live camera Focus Score down the USB cable as "S<0-100>",
+     so the LCD shows it and the buzzer can react. Reads the same number
+     the dashboard shows (#b-score) once per second. */
+  function startScoreWriter() {
+    stopScoreWriter();
+    scoreTimer = setInterval(() => {
+      if (!connected || !writer) return;
+      const el = document.getElementById('b-score');
+      if (!el) return;
+      const v = parseInt(el.textContent, 10);
+      if (!isNaN(v) && v >= 0 && v <= 100) {
+        try { writer.write('S' + v + '\n'); } catch (e) {}
+      }
+    }, 1000);
+  }
+
+  async function stopScoreWriter() {
+    if (scoreTimer) { clearInterval(scoreTimer); scoreTimer = null; }
+    if (writer) { try { await writer.close(); } catch (e) {} writer = null; }
+  }
+
   async function connect() {
     try {
       // This is the browser prompt asking for access to the serial port.
@@ -160,6 +238,12 @@ window.DeskSensor = (() => {
       connected = true;
       render();
       readLoop();
+      try {   // one-way link: website -> Arduino ("S<score>")
+        const enc = new TextEncoderStream();
+        enc.readable.pipeTo(port.writable);
+        writer = enc.writable.getWriter();
+        startScoreWriter();
+      } catch (e) { console.warn('DeskSensor write setup failed:', e); }
     } catch (e) {
       console.warn('DeskSensor connect failed:', e);
       connected = false;
@@ -168,6 +252,7 @@ window.DeskSensor = (() => {
   }
 
   async function disconnect() {
+    await stopScoreWriter();
     try { if (reader) await reader.cancel(); } catch (e) {}
     try { if (port) await port.close(); } catch (e) {}
     connected = false; port = null; reader = null;
